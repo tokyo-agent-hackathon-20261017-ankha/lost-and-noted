@@ -71,13 +71,73 @@
   .tool-btn:disabled { color: #8a8a8a; cursor: default; }
 
   /* ===== tab strip ===== */
-  .tabs { display: flex; padding: 6px 8px 0; gap: 2px; }
+  .tabs { display: flex; padding: 6px 8px 0; gap: 2px; cursor: default; }
   .tab {
     padding: 3px 14px; background: var(--metal);
     border: 2px solid; border-color: var(--ocean-light) var(--ocean-dark) var(--ocean-bg) var(--ocean-light);
     border-bottom: none; font-weight: 700; font-size: 11px; color: #3a4a5c;
   }
   .tab.selected { background: var(--ocean-bg); color: var(--ink); padding-top: 5px; margin-bottom: -2px; position: relative; }
+  .tab:not(.selected):hover { background: var(--metal-hi); }
+
+  /* ===== slides ===== */
+  .slide { display: none; }
+  .slide.active { display: block; }
+  .slide h2 { font-size: 15px; margin: 4px 0 10px; }
+  .slide h3 { font-size: 13px; margin: 12px 0 6px; }
+  .slide ul, .slide ol { margin: 4px 0 10px 22px; padding: 0; }
+  .slide li { margin-bottom: 3px; }
+  .slide .chain { color: #3a4a5c; }
+  .slide table { margin: 6px 0 10px; }
+  .slide .big { font-size: 13px; font-weight: 700; }
+  .slide-pager { margin-top: 10px; display: flex; gap: 6px; justify-content: flex-end; align-items: center; }
+  .slide-pager .pos { font-weight: 700; color: #3a4a5c; }
+
+  /* ===== slide visuals (Swing-flavored) ===== */
+  .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 8px; margin: 8px 0 12px; }
+  .cat-card {
+    background: #fff; padding: 8px 10px;
+    border: 2px solid; border-color: var(--ocean-light) var(--ocean-dark) var(--ocean-dark) var(--ocean-light);
+  }
+  .cat-card .cat-name { font-weight: 700; font-size: 12px; }
+  .cat-card .cat-policy {
+    display: inline-block; margin: 3px 0 4px; padding: 0 6px; font-size: 10px; font-weight: 700;
+    border: 1px solid; border-color: var(--ocean-light) var(--ocean-dark) var(--ocean-dark) var(--ocean-light);
+  }
+  .cat-card .cat-items { font-size: 11px; color: #3a4a5c; }
+  .pol-1m { background: #d8ecd8; color: #1a4a1a; }
+  .pol-2d { background: #f4e0c8; color: #5a3a10; }
+  .pol-1d { background: #f8f0d0; color: #5a4a10; }
+  .pol-store { background: #dce8f8; color: #1a3a6a; }
+  .pol-batch { background: #f4d8d2; color: #6a1a10; }
+
+  .risk-flow { margin: 8px 0 14px; }
+  .risk-row { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0; margin-bottom: 10px; }
+  .risk-box {
+    flex: 1 1 130px; min-width: 120px; padding: 7px 9px; font-size: 11px; background: #fff;
+    border: 2px solid; border-color: var(--ocean-light) var(--ocean-dark) var(--ocean-dark) var(--ocean-light);
+  }
+  .risk-box.risk-src { background: #f4d8d2; font-weight: 700; }
+  .risk-box.risk-end { background: var(--sel); font-weight: 700; }
+  .risk-arrow {
+    display: flex; align-items: center; padding: 0 4px; color: #3a4a5c; font-weight: 900; font-size: 13px;
+  }
+  .risk-num {
+    display: inline-flex; width: 16px; height: 16px; margin-right: 5px; align-items: center; justify-content: center;
+    background: var(--blue-title1); color: #fff; font-size: 10px; font-weight: 900; vertical-align: middle;
+  }
+
+  .impact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin: 10px 0; }
+  .stat-card {
+    background: #fff; padding: 10px; text-align: center;
+    border: 2px solid; border-color: var(--ocean-light) var(--ocean-dark) var(--ocean-dark) var(--ocean-light);
+  }
+  .stat-card .stat-num { font-size: 20px; font-weight: 900; color: var(--blue-title1); }
+  .stat-card .stat-label { font-size: 10px; color: #3a4a5c; margin-top: 2px; font-weight: 700; }
+  .impact-banner {
+    margin: 12px 0 4px; padding: 9px 12px; font-weight: 700; font-size: 12px; background: #fdf6d8; color: #5a4a10;
+    border: 2px solid; border-color: #b8a24a #efe3b0 #efe3b0 #b8a24a;
+  }
 
   /* ===== panels ===== */
   .panel { margin: 0 8px 8px; padding: 12px; background: var(--ocean-bg); }
@@ -135,7 +195,6 @@
     background: var(--ocean-bg); font-weight: 400; text-align: center; color: var(--ink);
     border: 1px solid; border-color: var(--ocean-light) var(--ocean-dark) var(--ocean-dark) var(--ocean-light);
   }
-  tr.sel-row td { background: var(--sel); }
   .table-wrap { overflow-x: auto; }
 
   .pill {
@@ -157,7 +216,7 @@
   /* ===== thumbnails / email ===== */
   .thumbs { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0; }
   .thumbs img {
-    width: 72px; height: 72px; object-fit: cover; background: #fff;
+    width: 256px; height: 256px; object-fit: cover; background: #fff;
     border: 2px solid; border-color: var(--ocean-dark) var(--ocean-light) var(--ocean-light) var(--ocean-dark);
   }
   pre.email {
@@ -192,14 +251,15 @@
     <span class="tool-btn" style="border-color:var(--ocean-dark) var(--ocean-light) var(--ocean-light) var(--ocean-dark); cursor:default">Room items: photograph → classify → record</span>
   </div>
   <div class="tabs">
-    <span class="tab selected">Items</span>
-    <span class="tab">Keep Policy</span>
-    <span class="tab">Guest Contact</span>
+    <span class="tab selected" data-slide="problem">1. Problem &amp; Risks</span>
+    <span class="tab" data-slide="app">2. The Tool</span>
+    <span class="tab" data-slide="impact">3. Impact</span>
   </div>
 
   <main>
     <div id="banners"></div>
 
+    <div class="slide" id="slide-app">
     <fieldset class="swing">
       <legend>New session</legend>
       <label for="photos">Photos of the items</label>
@@ -212,6 +272,113 @@
 
     <div id="result"></div>
     <div id="history"></div>
+    </div>
+
+    <div class="slide active" id="slide-problem">
+      <h2>Problem</h2>
+      <p class="big">Sorting and cataloging lost items of every checked-out room, within the day, is time consuming.</p>
+      <div class="cat-grid">
+        <div class="cat-card">
+          <div class="cat-name">Expirable</div>
+          <span class="cat-policy pol-1m">1-month keep</span>
+          <div class="cat-items">Food, medicine, cosmetics</div>
+        </div>
+        <div class="cat-card">
+          <div class="cat-name">Non-expirable</div>
+          <span class="cat-policy pol-2d">2-day keep</span>
+          <div class="cat-items">Ordinary belongings</div>
+        </div>
+        <div class="cat-card">
+          <div class="cat-name">Flammable</div>
+          <span class="cat-policy pol-batch">Batch processing</span>
+          <div class="cat-items">Lighters, batteries</div>
+        </div>
+        <div class="cat-card">
+          <div class="cat-name">Company property</div>
+          <span class="cat-policy pol-store">Return to storage</span>
+          <div class="cat-items">Room key</div>
+        </div>
+        <div class="cat-card">
+          <div class="cat-name">Currency</div>
+          <span class="cat-policy pol-1d">1-day keep</span>
+          <div class="cat-items">Domestic / foreign</div>
+        </div>
+        <div class="cat-card">
+          <div class="cat-name">Valuables</div>
+          <span class="cat-policy pol-1m">1-month keep</span>
+          <div class="cat-items">Watches, glasses, necklaces</div>
+        </div>
+      </div>
+      <div class="etched"></div>
+      <h2>Risks</h2>
+      <div class="risk-flow">
+        <div class="risk-row">
+          <span class="risk-num">1</span>
+        </div>
+        <div class="risk-row">
+          <div class="risk-box risk-src">Less focus on customer service</div>
+          <div class="risk-arrow">&rarr;</div>
+          <div class="risk-box">Lowered customer satisfaction</div>
+          <div class="risk-arrow">&rarr;</div>
+          <div class="risk-box">Minimal customer loyalty</div>
+          <div class="risk-arrow">&rarr;</div>
+          <div class="risk-box risk-end">Lost revenue</div>
+        </div>
+        <div class="risk-row">
+          <span class="risk-num">2</span>
+        </div>
+        <div class="risk-row">
+          <div class="risk-box risk-src">Less time for mission critical tasks</div>
+          <div class="risk-arrow">&rarr;</div>
+          <div class="risk-box">Suboptimal hotel administration</div>
+          <div class="risk-arrow">&rarr;</div>
+          <div class="risk-box">Unfavorable internal audit</div>
+          <div class="risk-arrow">&rarr;</div>
+          <div class="risk-box risk-end">Career stagnation</div>
+        </div>
+      </div>
+      <div class="slide-pager">
+        <span class="pos">1 / 3</span>
+        <button class="swing" data-goto="app">Next</button>
+      </div>
+    </div>
+
+    <div class="slide" id="slide-impact">
+      <h2>Impact</h2>
+      <div class="risk-row" style="margin-bottom:6px">
+        <div class="risk-box"><span class="risk-num">1</span> Task optimization</div>
+        <div class="risk-arrow">&rarr;</div>
+        <div class="risk-box risk-end">Resolves Risk 1</div>
+      </div>
+      <div class="risk-row" style="margin-bottom:12px">
+        <div class="risk-box"><span class="risk-num">2</span> Time efficiency</div>
+        <div class="risk-arrow">&rarr;</div>
+        <div class="risk-box risk-end">Resolves Risk 2</div>
+      </div>
+      <div class="impact-grid">
+        <div class="stat-card">
+          <div class="stat-num">60 min</div>
+          <div class="stat-label">saved per day, per hotel</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">21,900</div>
+          <div class="stat-label">minutes saved per year, per hotel</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">57 USD</div>
+          <div class="stat-label">labour productivity per hour (JP, GDP)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">7 sec</div>
+          <div class="stat-label">inference time per session run</div>
+        </div>
+      </div>
+      <div class="impact-banner">~20,830 JPY worth of productivity was missing per day, per hotel!!!</div>
+      <div class="slide-pager">
+        <button class="swing" data-goto="app">Back</button>
+        <span class="pos">3 / 3</span>
+      </div>
+    </div>
   </main>
 
   <div class="statusbar"><span class="cell" id="status-msg">Ready</span></div>
@@ -234,15 +401,26 @@ function nextStatus(s) {
   return i >= 0 ? STATUSES[(i + 1) % STATUSES.length] : STATUSES[0];
 }
 
+// keep policy: class -> {days: offset from registry date, action} (null days = immediate)
 const KEEP_POLICY = {
-  expirable: "keep 1 month",
-  non_expirable: "keep 2 days",
-  flammable: "batch",
-  company_property: "return to storage",
-  domestic_currency: "keep 1 day",
-  foreign_currency: "keep 1 day",
-  valuable: "keep 1 month",
+  expirable: { days: 30, action: "dispose" },
+  non_expirable: { days: 2, action: "dispose" },
+  flammable: { days: 0, action: "batch" },
+  company_property: { days: 0, action: "return to storage" },
+  domestic_currency: { days: 1, action: "process" },
+  foreign_currency: { days: 1, action: "process" },
+  valuable: { days: 30, action: "contact guest" },
 };
+
+function policyDeadline(rec, cls) {
+  const pol = KEEP_POLICY[cls];
+  if (!pol) return "";
+  const base = new Date(rec.created);
+  const d = new Date(base);
+  d.setDate(d.getDate() + pol.days);
+  const iso = d.toISOString().slice(0, 10);
+  return `${pol.action} by ${iso}`;
+}
 
 function itemRow(rec, item, idx) {
   const known = STATUSES.includes(item.status);
@@ -255,7 +433,7 @@ function itemRow(rec, item, idx) {
   return `<tr${idx === 0 ? ' class="sel-row"' : ""}>
     <td>${esc(item.type)}</td>
     <td><span class="pill ${esc(item.class)}">${esc(item.class.replaceAll("_"," "))}</span></td>
-    <td>${KEEP_POLICY[item.class] ?? ""}</td>
+    <td>${policyDeadline(rec, item.class)}</td>
     <td>${statusHtml}</td>
   </tr>`;
 }
@@ -319,7 +497,7 @@ function recordHtml(rec, guest) {
       <div class="thumbs">${thumbs}</div>
       ${banners}
       <div class="table-wrap">
-      <table><thead><tr><th>Item</th><th>Class</th><th>Keep Policy</th><th>Status</th></tr></thead>
+      <table><thead><tr><th>Item</th><th>Class</th><th>Process By</th><th>Status</th></tr></thead>
       <tbody>${rows || "<tr><td colspan=4>No items detected</td></tr>"}</tbody></table>
       </div>
       ${emailBlock}
@@ -480,6 +658,20 @@ document.addEventListener("change", e => {
     .then(r => { if (!r.ok) throw new Error("update failed"); return fetch(`/api/sessions/${recId}`).then(r => r.json()); })
     .then(updated => attachGuest(updated))
     .catch(err => banner("error", "Could not update room number: " + err.message));
+});
+
+// ===== slide tabs =====
+function showSlide(name) {
+  document.querySelectorAll(".slide").forEach(s => s.classList.toggle("active", s.id === `slide-${name}`));
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("selected", t.dataset.slide === name));
+  $("#status-msg").textContent = name === "app" ? "Ready" : `Slide ${name}`;
+}
+
+document.addEventListener("click", e => {
+  const tab = e.target.closest(".tab[data-slide]");
+  if (tab) showSlide(tab.dataset.slide);
+  const goto = e.target.closest("[data-goto]");
+  if (goto) showSlide(goto.dataset.goto);
 });
 
 loadHistory();
