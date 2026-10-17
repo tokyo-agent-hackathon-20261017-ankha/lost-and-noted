@@ -225,6 +225,17 @@
     padding: 8px; white-space: pre-wrap; overflow-x: auto; margin: 6px 0;
   }
 
+  /* ===== API log terminal ===== */
+  pre.log-term {
+    background: #fff; color: #1a3a1a; font: 11px/1.6 "Courier New", monospace;
+    border: 2px solid; border-color: var(--ocean-dark) var(--ocean-light) var(--ocean-light) var(--ocean-dark);
+    padding: 8px; white-space: pre-wrap; word-break: break-all;
+    overflow-y: auto; margin: 0;
+  }
+  pre.log-term .log-line { display: block; }
+  pre.log-term .log-err { color: #8a1a10; font-weight: 700; }
+  pre.log-term .log-ok { color: #1a5a1a; font-weight: 700; }
+
   .record-head { display: flex; justify-content: space-between; align-items: baseline; }
   .record-head h2 { font-size: 13px; margin: 0; display: flex; align-items: center; gap: 8px; }
   .record-head small { color: #3a4a5c; }
@@ -253,7 +264,8 @@
   <div class="tabs">
     <span class="tab selected" data-slide="problem">1. Problem &amp; Risks</span>
     <span class="tab" data-slide="app">2. The Tool</span>
-    <span class="tab" data-slide="impact">3. Impact</span>
+    <span class="tab" data-slide="blank">3. Demo</span>
+    <span class="tab" data-slide="impact">4. Impact</span>
   </div>
 
   <main>
@@ -272,6 +284,25 @@
 
     <div id="result"></div>
     <div id="history"></div>
+    </div>
+
+    <div class="slide" id="slide-blank">
+    <fieldset class="swing">
+      <legend>New session</legend>
+      <label for="photos-demo">Photos of the items</label>
+      <input type="file" id="photos-demo" accept="image/*" capture="environment" multiple>
+      <div id="errors-demo"></div>
+      <div style="margin-top:8px">
+        <button class="swing" id="submit-demo">Classify items</button>
+      </div>
+    </fieldset>
+
+    <fieldset class="swing" id="log-panel" style="display:none">
+      <legend>API log</legend>
+      <pre class="log-term" id="log-term"></pre>
+    </fieldset>
+
+    <div id="result-demo"></div>
     </div>
 
     <div class="slide active" id="slide-problem">
@@ -338,24 +369,18 @@
         </div>
       </div>
       <div class="slide-pager">
-        <span class="pos">1 / 3</span>
+        <span class="pos">1 / 4</span>
         <button class="swing" data-goto="app">Next</button>
       </div>
     </div>
 
     <div class="slide" id="slide-impact">
       <h2>Impact</h2>
-      <div class="risk-row" style="margin-bottom:6px">
-        <div class="risk-box"><span class="risk-num">1</span> Task optimization</div>
-        <div class="risk-arrow">&rarr;</div>
-        <div class="risk-box risk-end">Resolves Risk 1</div>
-      </div>
-      <div class="risk-row" style="margin-bottom:12px">
-        <div class="risk-box"><span class="risk-num">2</span> Time efficiency</div>
-        <div class="risk-arrow">&rarr;</div>
-        <div class="risk-box risk-end">Resolves Risk 2</div>
-      </div>
       <div class="impact-grid">
+        <div class="stat-card">
+          <div class="stat-num">7 sec</div>
+          <div class="stat-label">inference time per session run</div>
+        </div>
         <div class="stat-card">
           <div class="stat-num">60 min</div>
           <div class="stat-label">saved per day, per hotel</div>
@@ -368,15 +393,12 @@
           <div class="stat-num">57 USD</div>
           <div class="stat-label">labour productivity per hour (JP, GDP)</div>
         </div>
-        <div class="stat-card">
-          <div class="stat-num">7 sec</div>
-          <div class="stat-label">inference time per session run</div>
-        </div>
       </div>
-      <div class="impact-banner">~20,830 JPY worth of productivity was missing per day, per hotel!!!</div>
+      <div class="impact-banner">~3,287,760 JPY worth of productivity is missing per year, per hotel!!!</div>
+      <div class="impact-banner">~3,702,017,760 JPY worth of productivity is missing per year, per hotel chain!!!</div>
       <div class="slide-pager">
-        <button class="swing" data-goto="app">Back</button>
-        <span class="pos">3 / 3</span>
+        <button class="swing" data-goto="blank">Back</button>
+        <span class="pos">4 / 4</span>
       </div>
     </div>
   </main>
@@ -535,33 +557,59 @@ async function loadHistory() {
   records.forEach(attachGuest);
 }
 
-async function submitForm() {
-  $("#errors").innerHTML = "";
-  const files = $("#photos").files;
+async function submitForm(filesInput, btn, errorsEl, resultEl, photosEl, logEl) {
+  errorsEl.innerHTML = "";
+  const files = filesInput.files;
   if (!files.length) return banner("error", "Please take at least one photo.");
 
-  const btn = $("#submit2");
   btn.disabled = true; btn.textContent = "Classifying…";
   $("#status-msg").textContent = "Classifying…";
+  let logSource = null;
+  if (logEl) logSource = startLogStream(logEl);
   try {
     const form = new FormData();
     for (const f of files) form.append("images", f);
     const res = await fetch("/api/sessions", { method: "POST", body: form });
     const rec = await res.json();
     if (!res.ok) throw new Error(rec.detail || "classification failed");
-    $("#result").innerHTML = recordHtml(rec) + $("#result").innerHTML;
+    resultEl.innerHTML = recordHtml(rec) + resultEl.innerHTML;
     attachGuest(rec);
     banner("info", "Saved.");
-    $("#photos").value = "";
+    filesInput.value = "";
   } catch (err) {
     banner("error", "Error: " + err.message);
   } finally {
     btn.disabled = false; btn.textContent = "Classify items";
+    if (logSource) setTimeout(() => logSource.close(), 1500); // grab trailing lines
   }
 }
 
-$("#submit").addEventListener("click", submitForm);
-$("#submit2").addEventListener("click", submitForm);
+// ===== demo API log stream (SSE) =====
+function startLogStream(termEl) {
+  const panel = $("#log-panel");
+  panel.style.display = "";
+  termEl.innerHTML = "";
+  const src = new EventSource("/api/logs");
+  src.onmessage = e => {
+    const line = e.data;
+    const cls = /ERROR/i.test(line) ? "log-err" : (/saved|done|Sent/i.test(line) ? "log-ok" : "");
+    termEl.insertAdjacentHTML("beforeend", `<span class="log-line ${cls}">${esc(line)}</span>\n`);
+    termEl.scrollTop = termEl.scrollHeight;
+  };
+  src.onerror = () => { /* server restart etc. — UI keeps working */ };
+  return src;
+}
+
+function toolSubmit() {
+  submitForm($("#photos"), $("#submit2"), $("#errors"), $("#result"), $("#photos"), null);
+}
+function demoSubmit() {
+  submitForm($("#photos-demo"), $("#submit-demo"), $("#errors-demo"), $("#result-demo"), $("#photos-demo"), $("#log-term"));
+}
+
+$("#submit").addEventListener("click", toolSubmit);
+$("#submit2").addEventListener("click", toolSubmit);
+$("#submit-demo").addEventListener("click", demoSubmit);
 
 document.addEventListener("click", e => {
   statusHandler(e);

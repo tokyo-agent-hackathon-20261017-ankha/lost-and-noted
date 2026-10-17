@@ -1,8 +1,9 @@
 """Lost and Noted — FastAPI server: classify, store, notify, draft email."""
+import asyncio
 import json
 import os
 import shutil
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 # minimal .env loader (no python-dotenv dependency)
@@ -15,7 +16,7 @@ if _env_file.exists():
             os.environ.setdefault(key.strip(), value.strip())
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from classifier import classify_images
@@ -35,6 +36,15 @@ IMAGES_DIR = DATA_DIR / "images"
 RECORDS_DIR = DATA_DIR / "records"
 
 app = FastAPI(title="Lost and Noted")
+
+# --- demo log stream (in-memory, unbounded) ---
+_log_lines: list[str] = []
+
+
+def log(msg: str) -> None:
+    jst = timezone(timedelta(hours=9))
+    ts = datetime.now(jst).strftime("%H:%M:%S")
+    _log_lines.append(f"[{ts}] {msg}")
 
 
 def save_record(record: SessionRecord) -> None:
@@ -63,27 +73,47 @@ async def create_session(
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
     IMAGES_DIR.mkdir(parents=True, exist_ok=True)
     saved: list[Path] = []
+    log(f"POST /api/sessions — {len(images)} image(s) received")
     for i, upload in enumerate(images):
         ext = Path(upload.filename or "photo.jpeg").suffix.lower() or ".jpeg"
         dest = IMAGES_DIR / f"{stamp}_0_{i}{ext}"
         with dest.open("wb") as fh:
             shutil.copyfileobj(upload.file, fh)
         saved.append(dest)
+        log(f"image {i + 1}/{len(images)} saved: {dest.name} ({dest.stat().st_size // 1024} KB)")
 
+    log(f"uploading to ai& files API (purpose=vision)…")
     try:
-        result = classify_images(saved, api_key)
+        result = classify_images(saved, api_key, log_fn=log)
     except Exception as exc:
+        log(f"ERROR: classification failed: {exc}")
         for path in saved:  # no half-written sessions on inference failure
             path.unlink(missing_ok=True)
         raise HTTPException(502, f"Classification failed: {exc}") from exc
 
+    log(f"model: glm-5.3-flash — {len(result.items)} item(s), room={result.room_number}")
     record = SessionRecord(
         room_number=result.room_number,  # inferred from the room-number paper
         images=[f"/images/{p.name}" for p in saved],
         items=result.items,
     )
     save_record(record)
+    log(f"record saved: {record.id[:8]}… ({len(record.items)} items)")
     return record
+
+
+@app.get("/api/logs")
+async def stream_logs() -> StreamingResponse:
+    """SSE stream of server-side API logs (for the demo slide)."""
+    async def gen():
+        seen = 0
+        while True:
+            while seen < len(_log_lines):
+                yield f"data: {_log_lines[seen]}\n\n"
+                seen += 1
+            await asyncio.sleep(0.3)
+
+    return StreamingResponse(gen(), media_type="text/event-stream")
 
 
 @app.get("/api/statuses")
