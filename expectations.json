@@ -1,0 +1,23 @@
+{
+  "20261017_160": {
+    "must_contain": [
+      {"class": "expirable"},
+      {"class": "non_expirable"}
+    ],
+    "must_not_contain": [
+      {"class": "company_property"}
+    ],
+    "min_items": 3,
+    "max_items": 8,
+    "room_number": 160
+  },
+  "20261017_204": {
+    "must_contain": [
+      {"type": "key card", "class": "company_property"},
+      {"type": "credit card", "class": "valuable"}
+    ],
+    "min_items": 3,
+    "max_items": 10,
+    "room_number": 204
+  }
+}

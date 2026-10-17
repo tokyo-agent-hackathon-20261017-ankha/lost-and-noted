@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lost and Noted</title>
+<style>
+  /* Java Swing Metal/Ocean look-and-feel */
+  :root {
+    --ocean-bg: #d5dde8;        /* desktop / panel background */
+    --ocean-dark: #9ba7b8;      /* bevel shadow */
+    --ocean-light: #ffffff;     /* bevel highlight */
+    --metal: #e6ebf2;           /* button face */
+    --metal-hi: #f7f9fc;
+    --ink: #1a1a1a;
+    --blue-title1: #2a4d8f;     /* title bar gradient */
+    --blue-title2: #6d95d4;
+    --sel: #aec6e8;             /* table selection blue */
+    --grid: #8fa0b5;            /* table grid lines */
+    --scroll: #c3ccd9;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 16px; background: #8090a4;
+    background-image: radial-gradient(circle at 20% 10%, #93a3b6 0%, #6c7c90 60%);
+    color: var(--ink);
+    font: 12px/1.45 "Segoe UI", Tahoma, "MS Sans Serif", Geneva, sans-serif;
+  }
+
+  /* ===== window frame ===== */
+  .window {
+    max-width: 780px; margin: 0 auto;
+    border: 2px solid; border-color: var(--ocean-light) var(--ocean-dark) var(--ocean-dark) var(--ocean-light);
+    box-shadow: 4px 4px 12px rgba(0,0,0,.45);
+    background: var(--ocean-bg);
+  }
+  .titlebar {
+    display: flex; align-items: center; gap: 6px;
+    background: linear-gradient(180deg, var(--blue-title2) 0%, var(--blue-title1) 55%, #1c3a75 100%);
+    color: #fff; padding: 3px 4px; font-weight: 700; font-size: 12px;
+  }
+  .titlebar .java-logo {
+    width: 16px; height: 16px; background: #d8a437; border: 1px solid #8a6a20;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 9px; color: #5a4210; font-weight: 900;
+  }
+  .titlebar .title { flex: 1; text-shadow: 1px 1px 1px rgba(0,0,0,.5); }
+  .win-btn {
+    width: 16px; height: 14px; background: var(--metal);
+    border: 1px solid; border-color: var(--ocean-light) var(--ocean-dark) var(--ocean-dark) var(--ocean-light);
+    color: #1a1a1a; font-size: 8px; font-weight: 900; line-height: 1;
+    display: inline-flex; align-items: center; justify-content: center; cursor: default;
+  }
+
+  /* ===== toolbar ===== */
+  .toolbar {
+    display: flex; gap: 2px; padding: 3px 6px;
+    background: var(--ocean-bg);
+    border-bottom: 1px solid var(--ocean-dark);
+  }
+  .tool-btn {
+    background: var(--metal); border: 1px solid transparent; padding: 2px 8px;
+    font: inherit; font-weight: 700; color: var(--ink); cursor: pointer;
+  }
+  .tool-btn:hover:not(:disabled) {
+    border-color: var(--ocean-light) var(--ocean-dark) var(--ocean-dark) var(--ocean-light);
+  }
+  .tool-btn:active:not(:disabled) {
+    border-color: var(--ocean-dark) var(--ocean-light) var(--ocean-light) var(--ocean-dark);
+  }
+  .tool-btn:disabled { color: #8a8a8a; cursor: default; }
+
+  /* ===== tab strip ===== */
+  .tabs { display: flex; padding: 6px 8px 0; gap: 2px; }
+  .tab {
+    padding: 3px 14px; background: var(--metal);
+    border: 2px solid; border-color: var(--ocean-light) var(--ocean-dark) var(--ocean-bg) var(--ocean-light);
+    border-bottom: none; font-weight: 700; font-size: 11px; color: #3a4a5c;
+  }
+  .tab.selected { background: var(--ocean-bg); color: var(--ink); padding-top: 5px; margin-bottom: -2px; position: relative; }
+
+  /* ===== panels ===== */
+  .panel { margin: 0 8px 8px; padding: 12px; background: var(--ocean-bg); }
+  fieldset.swing {
+    border: 1px solid; border-color: var(--ocean-dark) var(--ocean-light) var(--ocean-light) var(--ocean-dark);
+    background: var(--ocean-bg); padding: 10px 12px 12px; margin: 0 0 10px;
+  }
+  fieldset.swing > legend {
+    font-weight: 700; font-size: 12px; padding: 0 4px; color: var(--ink);
+  }
+  .etched { border: 2px groove #c8d0da; margin: 10px 0; }
+
+  /* ===== form controls ===== */
+  label { display: block; font-weight: 700; margin: 6px 0 2px; }
+  input[type=number], input[type=file], input[type=email], .status-edit {
+    font: inherit; padding: 2px 4px; color: var(--ink);
+    background: #fff; border: 2px solid; border-color: var(--ocean-dark) var(--ocean-light) var(--ocean-light) var(--ocean-dark);
+  }
+  input[type=file] { background: transparent; border: none; padding: 0; }
+  input[type=number].room-edit { width: 70px; font-weight: 700; text-align: center; }
+  input:focus { outline: 1px dotted #333; outline-offset: -4px; }
+
+  button.swing, .status-btn {
+    font: inherit; font-weight: 700; color: var(--ink); cursor: pointer;
+    background: linear-gradient(180deg, var(--metal-hi) 0%, var(--metal) 50%, #d4dbe6 100%);
+    border: 2px solid; border-color: var(--ocean-light) var(--ocean-dark) var(--ocean-dark) var(--ocean-light);
+    padding: 4px 14px;
+  }
+  button.swing:active:not(:disabled), .status-btn:active {
+    border-color: var(--ocean-dark) var(--ocean-light) var(--ocean-light) var(--ocean-dark);
+    background: #ccd4e0;
+  }
+  button.swing:disabled { color: #8a8a8a; cursor: default; }
+  button.secondary { font-weight: 400; }
+  .edit-status {
+    font: inherit; cursor: pointer; padding: 1px 5px; margin-left: 4px;
+    background: var(--metal); border: 1px solid; border-color: var(--ocean-light) var(--ocean-dark) var(--ocean-dark) var(--ocean-light);
+  }
+
+  /* ===== banners (JOptionPane-ish) ===== */
+  .banner {
+    display: flex; align-items: center; gap: 8px;
+    border: 2px solid; padding: 6px 10px; margin: 8px 0; font-weight: 700;
+    background: #fdf6d8; border-color: #b8a24a #efe3b0 #efe3b0 #b8a24a; color: #5a4a10;
+  }
+  .banner.company { background: #f4d8d2; border-color: #a86a5a #e8c4bc #e8c4bc #a86a5a; color: #6a1a10; }
+  .banner.valuable { background: #fdf6d8; border-color: #b8a24a #efe3b0 #efe3b0 #b8a24a; color: #5a4a10; }
+  .banner.error { background: #f4d8d2; border-color: #a86a5a #e8c4bc #e8c4bc #a86a5a; color: #6a1a10; }
+  .banner.info { background: #d8e4f4; border-color: #5a7aaa #c4d4e8 #c4d4e8 #5a7aaa; color: #1a3a6a; }
+
+  /* ===== table (JTable) ===== */
+  table { border-collapse: collapse; width: 100%; background: #fff; font-size: 12px; }
+  th, td { border: 1px solid var(--grid); padding: 2px 8px; text-align: left; }
+  th {
+    background: var(--ocean-bg); font-weight: 400; text-align: center; color: var(--ink);
+    border: 1px solid; border-color: var(--ocean-light) var(--ocean-dark) var(--ocean-dark) var(--ocean-light);
+  }
+  tr.sel-row td { background: var(--sel); }
+  .table-wrap { overflow-x: auto; }
+
+  .pill {
+    display: inline-block; padding: 0 8px; font-size: 11px; font-weight: 700;
+    background: var(--metal); color: #3a4a5c;
+    border: 1px solid; border-color: var(--ocean-light) var(--ocean-dark) var(--ocean-dark) var(--ocean-light);
+  }
+  .pill.company_property { background: #f4d8d2; color: #6a1a10; }
+  .pill.valuable { background: #fdf6d8; color: #5a4a10; }
+  .pill.flammable { background: #f4dcc4; color: #6a3a10; }
+  .pill.domestic_currency, .pill.foreign_currency { background: #d8ecd8; color: #1a4a1a; }
+
+  .status-btn { padding: 1px 10px; font-size: 11px; }
+  .status-btn.in_storage { background: linear-gradient(180deg,#f4f6f8,#dde3ea); }
+  .status-btn.in_safe { background: linear-gradient(180deg,#dce8f8,#b8cce8); }
+  .status-btn.to_policebox { background: linear-gradient(180deg,#f8f0d0,#e8dcA0); }
+  .status-edit { width: 130px; font-size: 11px; }
+
+  /* ===== thumbnails / email ===== */
+  .thumbs { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0; }
+  .thumbs img {
+    width: 72px; height: 72px; object-fit: cover; background: #fff;
+    border: 2px solid; border-color: var(--ocean-dark) var(--ocean-light) var(--ocean-light) var(--ocean-dark);
+  }
+  pre.email {
+    background: #fff; color: var(--ink); font: 12px/1.5 "Courier New", monospace;
+    border: 2px solid; border-color: var(--ocean-dark) var(--ocean-light) var(--ocean-light) var(--ocean-dark);
+    padding: 8px; white-space: pre-wrap; overflow-x: auto; margin: 6px 0;
+  }
+
+  .record-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .record-head h2 { font-size: 13px; margin: 0; display: flex; align-items: center; gap: 8px; }
+  .record-head small { color: #3a4a5c; }
+  .hidden { display: none; }
+
+  /* ===== status bar ===== */
+  .statusbar {
+    border-top: 1px solid var(--ocean-light); background: var(--ocean-bg);
+    padding: 3px 8px; font-size: 11px; color: #3a4a5c;
+  }
+  .statusbar .cell { border: 1px solid; border-color: var(--ocean-dark) var(--ocean-light) var(--ocean-light) var(--ocean-dark); padding: 1px 6px; }
+</style>
+</head>
+<body>
+<div class="window">
+  <div class="titlebar">
+    <span class="java-logo">J</span>
+    <span class="title">Lost and Noted</span>
+    <span class="win-btn">¸</span><span class="win-btn">□</span><span class="win-btn">✕</span>
+  </div>
+  <div class="toolbar">
+    <button class="tool-btn" id="submit">Add</button>
+    <span style="flex:1"></span>
+    <span class="tool-btn" style="border-color:var(--ocean-dark) var(--ocean-light) var(--ocean-light) var(--ocean-dark); cursor:default">Room items: photograph → classify → record</span>
+  </div>
+  <div class="tabs">
+    <span class="tab selected">Items</span>
+    <span class="tab">Keep Policy</span>
+    <span class="tab">Guest Contact</span>
+  </div>
+
+  <main>
+    <div id="banners"></div>
+
+    <fieldset class="swing">
+      <legend>New session</legend>
+      <label for="photos">Photos of the items</label>
+      <input type="file" id="photos" accept="image/*" capture="environment" multiple>
+      <div id="errors"></div>
+      <div style="margin-top:8px">
+        <button class="swing" id="submit2">Classify items</button>
+      </div>
+    </fieldset>
+
+    <div id="result"></div>
+    <div id="history"></div>
+  </main>
+
+  <div class="statusbar"><span class="cell" id="status-msg">Ready</span></div>
+</div>
+
+<script>
+const CLASSES = ["expirable","non_expirable","flammable","company_property",
+                 "domestic_currency","foreign_currency","valuable"];
+let STATUSES = ["in_storage","in_safe","to_policebox"];
+const $ = sel => document.querySelector(sel);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function banner(kind, html) {
+  $("#banners").insertAdjacentHTML("beforeend", `<div class="banner ${kind}">${html}</div>`);
+  $("#status-msg").textContent = html.replace(/<[^>]*>/g, "");
+}
+
+function nextStatus(s) {
+  const i = STATUSES.indexOf(s);
+  return i >= 0 ? STATUSES[(i + 1) % STATUSES.length] : STATUSES[0];
+}
+
+const KEEP_POLICY = {
+  expirable: "keep 1 month",
+  non_expirable: "keep 2 days",
+  flammable: "batch",
+  company_property: "return to storage",
+  domestic_currency: "keep 1 day",
+  foreign_currency: "keep 1 day",
+  valuable: "keep 1 month",
+};
+
+function itemRow(rec, item, idx) {
+  const known = STATUSES.includes(item.status);
+  const statusHtml = known
+    ? `<button class="status-btn ${esc(item.status)}" data-rec="${rec.id}" data-item="${item.id}">
+         ${esc(item.status.replaceAll("_"," "))}</button>
+       <button class="edit-status" data-rec="${rec.id}" data-item="${item.id}" title="Edit label">Edit</button>`
+    : `<input class="status-edit" data-rec="${rec.id}" data-item="${item.id}"
+              value="${esc(item.status)}" title="Custom label">`;
+  return `<tr${idx === 0 ? ' class="sel-row"' : ""}>
+    <td>${esc(item.type)}</td>
+    <td><span class="pill ${esc(item.class)}">${esc(item.class.replaceAll("_"," "))}</span></td>
+    <td>${KEEP_POLICY[item.class] ?? ""}</td>
+    <td>${statusHtml}</td>
+  </tr>`;
+}
+
+function emailDraft(rec, guest) {
+  const valuables = rec.items.filter(i => i.class === "valuable");
+  if (!valuables.length) return null;
+  const list = valuables.map(i => `- ${i.type}`).join("\n");
+  const name = guest ? guest.name : `Guest of Room ${rec.room_number}`;
+  const to = guest ? guest.email : "";
+  return { to, text: `Subject: Items found in your room (Room ${rec.room_number})
+
+Dear ${name},
+
+Thank you for staying with us. We found the following item(s) in your room after check-out:
+${list}
+
+In line with our keep policy, valuables are held securely for one month. You may either:
+- Pick them up at the front desk (please bring ID), or
+- Request delivery (shipping fees apply).
+
+Please contact us within one month of your check-out date.
+
+Sincerely,
+Front Desk` };
+}
+
+function recordHtml(rec, guest) {
+  const hasCompany = rec.items.some(i => i.class === "company_property");
+  const email = emailDraft(rec, guest);
+  let banners = "";
+  if (hasCompany) banners += `<div class="banner company">Company property: return to storage.</div>`;
+  if (email) {
+    if (guest) {
+      banners += `<div class="banner valuable">Valuables: contact ${esc(guest.name)} &lt;${esc(guest.email)}&gt;.</div>`;
+    } else {
+      banners += `<div class="banner valuable">Valuables: no guest contact on file.</div>`;
+    }
+  }
+  if (rec.room_number == null) banners += `<div class="banner error">Room number unreadable.</div>`;
+
+  const rows = rec.items.map((i, idx) => itemRow(rec, i, idx)).join("");
+  const emailBlock = email ? `
+    <fieldset class="swing"><legend>Draft email</legend>
+    <pre class="email">${esc(email.text)}</pre>
+    <button class="swing secondary send-email" data-rec="${rec.id}" ${guest ? "" : "disabled"}>Send email</button>
+    </fieldset>` : "";
+  const thumbs = rec.images.map(src => `<img src="${esc(src)}" alt="item photo">`).join("");
+
+  return `<div class="panel" data-rec="${rec.id}">
+    <fieldset class="swing">
+      <legend>
+        <span class="record-head">
+          <span style="display:flex;align-items:center;gap:8px">Room
+            <input type="number" class="room-edit" value="${rec.room_number ?? ""}"
+                   placeholder="room #" min="1" inputmode="numeric" data-rec="${rec.id}">
+          </span>
+          <small>${new Date(rec.created).toLocaleString()}</small>
+        </span>
+      </legend>
+      <div class="thumbs">${thumbs}</div>
+      ${banners}
+      <div class="table-wrap">
+      <table><thead><tr><th>Item</th><th>Class</th><th>Keep Policy</th><th>Status</th></tr></thead>
+      <tbody>${rows || "<tr><td colspan=4>No items detected</td></tr>"}</tbody></table>
+      </div>
+      ${emailBlock}
+    </fieldset>
+  </div>`;
+}
+
+function statusHandler(event) {
+  const btn = event.target.closest(".status-btn");
+  if (!btn) return;
+  const { rec, item } = btn.dataset;
+  submitStatus(rec, item, nextStatus(btn.textContent.trim().replaceAll(" ", "_")), btn);
+}
+
+function refreshRecordInPlace(rec, guest) {
+  const el = document.querySelector(`.panel[data-rec="${rec.id}"]`);
+  if (el) el.outerHTML = recordHtml(rec, guest);
+}
+
+// Fetch the guest contact for a record and re-render its email section once found.
+async function attachGuest(rec) {
+  let guest = null;
+  if (rec.room_number != null) {
+    try {
+      guest = await fetch(`/api/sessions/${rec.id}/guest`).then(r => r.ok ? r.json() : null);
+    } catch { guest = null; }
+  }
+  const el = document.querySelector(`.panel[data-rec="${rec.id}"]`);
+  if (el) el.outerHTML = recordHtml(rec, guest);
+}
+
+async function loadHistory() {
+  const records = await fetch("/api/sessions").then(r => r.json());
+  $("#history").innerHTML = records.map(r => recordHtml(r)).join("");
+  records.forEach(attachGuest);
+}
+
+async function submitForm() {
+  $("#errors").innerHTML = "";
+  const files = $("#photos").files;
+  if (!files.length) return banner("error", "Please take at least one photo.");
+
+  const btn = $("#submit2");
+  btn.disabled = true; btn.textContent = "Classifying…";
+  $("#status-msg").textContent = "Classifying…";
+  try {
+    const form = new FormData();
+    for (const f of files) form.append("images", f);
+    const res = await fetch("/api/sessions", { method: "POST", body: form });
+    const rec = await res.json();
+    if (!res.ok) throw new Error(rec.detail || "classification failed");
+    $("#result").innerHTML = recordHtml(rec) + $("#result").innerHTML;
+    attachGuest(rec);
+    banner("info", "Saved.");
+    $("#photos").value = "";
+  } catch (err) {
+    banner("error", "Error: " + err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = "Classify items";
+  }
+}
+
+$("#submit").addEventListener("click", submitForm);
+$("#submit2").addEventListener("click", submitForm);
+
+document.addEventListener("click", e => {
+  statusHandler(e);
+  const send = e.target.closest(".send-email");
+  if (send) sendEmailHandler(send);
+  const editBtn = e.target.closest(".edit-status");
+  if (editBtn) {
+    // swap the status button for an editable label in place
+    const td = editBtn.closest("td");
+    const btn = td.querySelector(".status-btn");
+    const current = btn.textContent.trim().replaceAll(" ", "_");
+    td.innerHTML = `<input class="status-edit" data-rec="${editBtn.dataset.rec}"
+      data-item="${editBtn.dataset.item}" value="${esc(current)}" title="Custom label">`;
+    td.querySelector(".status-edit").focus();
+  }
+});
+
+document.addEventListener("keydown", e => {
+  if (e.key !== "Enter") return;
+  const input = e.target.closest(".status-edit");
+  if (!input) return;
+  const value = input.value.trim().toLowerCase().replaceAll(" ", "_");
+  if (!value) return;
+  submitStatus(input.dataset.rec, input.dataset.item, value, input);
+});
+
+document.addEventListener("focusout", e => {
+  const input = e.target.closest(".status-edit");
+  if (!input || input.dataset.done) return;
+  input.dataset.done = "1";
+  const value = input.value.trim().toLowerCase().replaceAll(" ", "_");
+  if (!value) { renderStatusBack(input); return; }
+  submitStatus(input.dataset.rec, input.dataset.item, value, input);
+});
+
+function renderStatusBack(input) {
+  // re-fetch the record and re-render to restore the status pill
+  fetch(`/api/sessions/${input.dataset.rec}`)
+    .then(r => r.json())
+    .then(rec => refreshRecordInPlace(rec))
+    .catch(() => {});
+}
+
+async function submitStatus(recId, itemId, status, input) {
+  try {
+    const updated = await fetch(`/api/sessions/${recId}/items/${itemId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    }).then(r => { if (!r.ok) throw new Error("update failed"); return r.json(); });
+    if (status && !STATUSES.includes(status)) STATUSES.push(status);
+    refreshRecordInPlace(updated);
+  } catch (err) {
+    banner("error", "Could not update status: " + err.message);
+    renderStatusBack(input);
+  }
+}
+
+async function sendEmailHandler(btn) {
+  const panel = btn.closest(".panel");
+  const bannerEls = panel.querySelectorAll(".banner.valuable");
+  const guestMatch = bannerEls.length ? bannerEls[0].textContent.match(/<([^>]+)>/) : null;
+  const to = guestMatch ? guestMatch[1] : "";
+  if (!to) return banner("error", "No guest contact on file for this room.");
+  const pre = panel.querySelector("pre.email");
+  btn.disabled = true; btn.textContent = "Sending…";
+  try {
+    const res = await fetch(`/api/sessions/${btn.dataset.rec}/email`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ to, body: pre.textContent }),
+    });
+    const out = await res.json();
+    if (!res.ok) throw new Error(out.detail || "send failed");
+    btn.textContent = "Sent";
+    banner("info", `Email sent to ${to}.`);
+  } catch (err) {
+    banner("error", "Email failed: " + err.message);
+    btn.disabled = false; btn.textContent = "Send email";
+  }
+}
+
+document.addEventListener("change", e => {
+  const roomInput = e.target.closest(".room-edit");
+  if (!roomInput) return;
+  const value = parseInt(roomInput.value, 10);
+  if (!value) return;
+  const recId = roomInput.dataset.rec;
+  fetch(`/api/sessions/${recId}/room`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ room_number: value }),
+  })
+    .then(r => { if (!r.ok) throw new Error("update failed"); return fetch(`/api/sessions/${recId}`).then(r => r.json()); })
+    .then(updated => attachGuest(updated))
+    .catch(err => banner("error", "Could not update room number: " + err.message));
+});
+
+loadHistory();
+</script>
+</body>
+</html>
